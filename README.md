@@ -1,2 +1,2 @@
 # Pre-k-calc
-Custom FPL Calculator for Maryland State Department of Education
+Custom Prekindergarten Sliding Scale Payment Calculator for Maryland State Department of Education
