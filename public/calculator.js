@@ -1,3 +1,4 @@
+<script>
 // Constants for the sliding scale levels
 const slidingScale = [
   { level: "Level 1", fplMin: 301, fplMax: 360, familyShare: 0.01 },
@@ -9,10 +10,12 @@ const slidingScale = [
 
 const costOfCare = 13003; // Given
 
+const FPLYear = 2024; // FPL Data Year
+
 // This function looks up the FPL threshold based on the family size.
 // If the family size is greater than 8, it calculates the threshold using the fixed increment.
 async function fetchPovertyThreshold(householdSize) {
-  const apiUrl = "https://aspe.hhs.gov/topics/poverty-economic-mobility/poverty-guidelines/api/2023/us/";
+  const apiUrl = "https://aspe.hhs.gov/topics/poverty-economic-mobility/poverty-guidelines/api/" + FPLYear + "/us/";
 
   try {
     if (householdSize <= 8) {
@@ -121,7 +124,7 @@ async function calculatePayment(householdSize, householdIncome, disabilityFlag, 
 
     // Await the result of the fetchPovertyThreshold call
     const fplThreshold = await fetchPovertyThreshold(householdSize);
-    const fplPercentage = Math.round((householdIncome / fplThreshold) * 100);
+    const fplPercentage = Math.floor((householdIncome / fplThreshold) * 100);
     const level = calculateLevel(fplPercentage);
     const adjustedTier = adjustTier(level, disabilityFlag, englishLearnerFlag);
     const familyShare = getFamilyShare(fplPercentage);
@@ -139,6 +142,7 @@ async function calculatePayment(householdSize, householdIncome, disabilityFlag, 
     const stateShareCostOfCare = costOfCare - perPupilFamilyShare;
 
     let resultsHtml = '<table class="table">';
+    resultsHtml += "<tr><td>FPL Data:</td><td>" + FPLYear + "</td></tr>";
     resultsHtml += "<tr><td>Household Size:</td><td>" + householdSize + "</td></tr>";
     resultsHtml += "<tr><td>Household Income:</td><td>$" + formatNumber(householdIncome) + "</td></tr>";
     resultsHtml += "<tr><td>Disability Flag:</td><td>" + (disabilityFlag ? "Yes" : "No") + "</td></tr>";
@@ -155,3 +159,4 @@ async function calculatePayment(householdSize, householdIncome, disabilityFlag, 
 
     document.getElementById('results').innerHTML = resultsHtml;
 }
+</script>
