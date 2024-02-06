@@ -10,7 +10,7 @@ const slidingScale = [
 
 const costOfCare = 13003; // Given
 
-const FPLYear = 2024; // FPL Data Year
+const FPLYear = 2022; // FPL Data Year
 
 // This function looks up the FPL threshold based on the family size.
 // If the family size is greater than 8, it calculates the threshold using the fixed increment.
