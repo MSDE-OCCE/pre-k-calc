@@ -1,16 +1,16 @@
 <script>
 // Constants for the sliding scale levels
 const slidingScale = [
-  { level: "Level 1", fplMin: 301, fplMax: 360, familyShare: 0.01 },
-  { level: "Level 2", fplMin: 361, fplMax: 420, familyShare: 0.02 },
-  { level: "Level 3", fplMin: 421, fplMax: 480, familyShare: 0.04 },
-  { level: "Level 4", fplMin: 481, fplMax: 540, familyShare: 0.06 },
-  { level: "Level 5", fplMin: 541, fplMax: 600, familyShare: 0.07 }
+  { level: "1", fplMin: 301, fplMax: 360, familyShare: 0.01 },
+  { level: "2", fplMin: 361, fplMax: 420, familyShare: 0.02 },
+  { level: "3", fplMin: 421, fplMax: 480, familyShare: 0.04 },
+  { level: "4", fplMin: 481, fplMax: 540, familyShare: 0.06 },
+  { level: "5", fplMin: 541, fplMax: 600, familyShare: 0.07 }
 ];
 
 const costOfCare = 13003; // Given
 
-const FPLYear = 2022; // FPL Data Year
+const FPLYear = 2022;
 
 // This function looks up the FPL threshold based on the family size.
 // If the family size is greater than 8, it calculates the threshold using the fixed increment.
@@ -63,19 +63,19 @@ function calculateLevel(fplPercentage) {
 
 // This function determines the family's share based on the FPL percentage.
 // It returns the family share percentage if the FPL percentage falls within the sliding scale levels,
-// otherwise it returns null to indicate that the FPL percentage does not fall within the defined levels.
+// otherwise it returns "N/A" to indicate that the FPL percentage does not fall within the defined levels.
 function getFamilyShare(fplPercentage) {
   for (let scale of slidingScale) {
     if (fplPercentage >= scale.fplMin && fplPercentage <= scale.fplMax) {
       return scale.familyShare;
     }
   }
-  return null; // FPL percentage does not fall within the defined sliding scale levels
+  return "N/A"; // FPL percentage does not fall within the defined sliding scale levels
 }
 
-function adjustTier(level, disabilityFlag, englishLearnerFlag) {
+function adjustTier(level, disabilityFlag, englishLearnerFlag, homelessFlag) {
     // Check if there is a child with disabilities or an English learner and adjust the level if necessary.
-    if ((disabilityFlag && level < 9) || (englishLearnerFlag && level < 9) || level === 0) {
+    if ((disabilityFlag && level < 9) || (englishLearnerFlag && level < 9) || level === 0 || homelessFlag) {
         return "Tier I";
     } else if (level === 9) {
         return "Tier III";
@@ -84,7 +84,7 @@ function adjustTier(level, disabilityFlag, englishLearnerFlag) {
     }
 }
 
-function calculateFamilyShare(adjustedTier, fplPercentage) {
+function calculateFamilyShare(familyShare, adjustedTier, fplPercentage) {
     if (adjustedTier === "Tier I") {
         return 0;
     } else if (adjustedTier === "Tier II") {
@@ -94,21 +94,16 @@ function calculateFamilyShare(adjustedTier, fplPercentage) {
     } else if (adjustedTier === "Tier III") {
         return "N/A";
     }
+    
+    return familyShare;
 }
 
-function calculateFamilySharePercentage(familyShare, householdIncome) {
-    if (familyShare === "N/A") {
-        return (costOfCare / householdIncome);
-    } else {
-        return familyShare;
-    }
-}
 // Use a function to format numbers
 function formatNumber(num) {
     return num.toLocaleString(undefined, { maximumFractionDigits: 0 });
 }
     
-async function calculatePayment(householdSize, householdIncome, disabilityFlag, englishLearnerFlag) {
+async function calculatePayment(householdSize, householdIncome, disabilityFlag, englishLearnerFlag, homelessFlag) {
     householdSize = parseInt(householdSize);
     householdIncome = parseInt(householdIncome);
 
@@ -117,7 +112,7 @@ async function calculatePayment(householdSize, householdIncome, disabilityFlag, 
         alert("Please enter your household size (1-20)");
         return;
     }
-    if (isNaN(householdIncome) || householdIncome < 1) {
+    if (isNaN(householdIncome) || householdIncome < 0) {
         alert("Please enter your household income");
         return;
     }
@@ -126,15 +121,15 @@ async function calculatePayment(householdSize, householdIncome, disabilityFlag, 
     const fplThreshold = await fetchPovertyThreshold(householdSize);
     const fplPercentage = Math.floor((householdIncome / fplThreshold) * 100);
     const level = calculateLevel(fplPercentage);
-    const adjustedTier = adjustTier(level, disabilityFlag, englishLearnerFlag);
+    const adjustedTier = adjustTier(level, disabilityFlag, englishLearnerFlag, homelessFlag);
     const familyShare = getFamilyShare(fplPercentage);
-    const familySharePercent = calculateFamilySharePercentage(familyShare, householdIncome);
+    const familySharePercent = calculateFamilyShare(familyShare, adjustedTier, fplPercentage);
     
     let perPupilFamilyShare;
-    if (familyShare === "N/A") {
+    if (familySharePercent === "N/A") {
         perPupilFamilyShare = costOfCare;
     } else {
-        const familyShareAmount = familyShare * householdIncome;
+        const familyShareAmount = familySharePercent * householdIncome;
         perPupilFamilyShare = (familyShareAmount >= costOfCare) ? costOfCare : familyShareAmount;
     }
 
